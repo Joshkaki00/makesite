@@ -14,7 +14,10 @@ type Post struct {
 
 func main() {
 	file := flag.String("file", "first-post.txt", "name of the .txt file to render")
+	dir := flag.String("dir", "", "directory to scan for .txt files")
 	flag.Parse()
+
+	_ = dir // used starting in the next step
 
 	content, err := os.ReadFile(*file)
 	if err != nil {
