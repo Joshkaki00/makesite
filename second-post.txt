@@ -1,2 +1,3 @@
 Second Post
+
 This is the body of the second test post. It exists to verify that the directory-scanning flag can pick up more than one file at once.
