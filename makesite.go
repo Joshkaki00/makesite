@@ -31,4 +31,14 @@ func main() {
 	if err := tmpl.Execute(os.Stdout, post); err != nil {
 		panic(err)
 	}
+
+	out, err := os.Create("first-post.html")
+	if err != nil {
+		panic(err)
+	}
+	defer out.Close()
+
+	if err := tmpl.Execute(out, post); err != nil {
+		panic(err)
+	}
 }
