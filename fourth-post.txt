@@ -1,0 +1,2 @@
+Fourth Post
+This is the fourth and final test post. Together with the second and third post files, this gives four total .txt files in the directory (including first-post.txt) to exercise the --dir flag.
