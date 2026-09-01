@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"os"
 	"strings"
 	"text/template"
@@ -12,7 +13,10 @@ type Post struct {
 }
 
 func main() {
-	content, err := os.ReadFile("first-post.txt")
+	file := flag.String("file", "first-post.txt", "name of the .txt file to render")
+	flag.Parse()
+
+	content, err := os.ReadFile(*file)
 	if err != nil {
 		panic(err)
 	}
@@ -32,7 +36,8 @@ func main() {
 		panic(err)
 	}
 
-	out, err := os.Create("first-post.html")
+	outputName := strings.TrimSuffix(*file, ".txt") + ".html"
+	out, err := os.Create(outputName)
 	if err != nil {
 		panic(err)
 	}
