@@ -2,7 +2,9 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"text/template"
 )
@@ -17,7 +19,16 @@ func main() {
 	dir := flag.String("dir", "", "directory to scan for .txt files")
 	flag.Parse()
 
-	_ = dir // used starting in the next step
+	if *dir != "" {
+		matches, err := filepath.Glob(filepath.Join(*dir, "*.txt"))
+		if err != nil {
+			panic(err)
+		}
+		for _, m := range matches {
+			fmt.Println(m)
+		}
+		return
+	}
 
 	content, err := os.ReadFile(*file)
 	if err != nil {
