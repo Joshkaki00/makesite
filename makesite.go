@@ -7,7 +7,9 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
+	"sync"
 	"text/template"
 	"time"
 
@@ -67,22 +69,20 @@ func renderPost(tmpl *template.Template, path string) (int64, error) {
 		Body:  body,
 	}
 
+	// Rendering into an in-memory buffer first lets us write the file in a
+	// single syscall and read the size back from the buffer, avoiding an
+	// extra fstat() round trip.
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, post); err != nil {
+		return 0, err
+	}
+
 	outputName := strings.TrimSuffix(strings.TrimSuffix(path, ".txt"), ".md") + ".html"
-	out, err := os.Create(outputName)
-	if err != nil {
-		return 0, err
-	}
-	defer out.Close()
-
-	if err := tmpl.Execute(out, post); err != nil {
+	if err := os.WriteFile(outputName, buf.Bytes(), 0o644); err != nil {
 		return 0, err
 	}
 
-	info, err := out.Stat()
-	if err != nil {
-		return 0, err
-	}
-	return info.Size(), nil
+	return int64(buf.Len()), nil
 }
 
 func main() {
@@ -119,13 +119,41 @@ func main() {
 			fmt.Println(m)
 		}
 
+		// Rendering is I/O-bound (reading source files, writing HTML), so
+		// overlapping many of these operations via a bounded worker pool
+		// cuts wall-clock time well below what a purely CPU-bound workload
+		// would gain from parallelism.
+		maxWorkers := runtime.NumCPU() * 4
+		sem := make(chan struct{}, maxWorkers)
+		var wg sync.WaitGroup
+		var mu sync.Mutex
 		var totalBytes int64
+		var firstErr error
+
 		for _, m := range matches {
-			size, err := renderPost(tmpl, m)
-			if err != nil {
-				panic(err)
-			}
-			totalBytes += size
+			wg.Add(1)
+			sem <- struct{}{}
+			go func(path string) {
+				defer wg.Done()
+				defer func() { <-sem }()
+
+				size, err := renderPost(tmpl, path)
+
+				mu.Lock()
+				defer mu.Unlock()
+				if err != nil {
+					if firstErr == nil {
+						firstErr = err
+					}
+					return
+				}
+				totalBytes += size
+			}(m)
+		}
+		wg.Wait()
+
+		if firstErr != nil {
+			panic(firstErr)
 		}
 
 		kb := float64(totalBytes) / 1000.0
