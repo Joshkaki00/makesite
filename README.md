@@ -8,6 +8,15 @@ file, renders it into an HTML template, and writes the result to disk.
 - Go 1.22 or later
 - [goldmark](https://github.com/yuin/goldmark) for Markdown rendering
 
+## Third-party library
+
+I will use the **goldmark** library. The documentation is located at
+https://github.com/yuin/goldmark. My goal is to use it to parse
+Markdown (`.md`) post files and transform them into HTML, so that
+`#` through `######` headings become `<h1>` through `<h6>` elements
+(along with other Markdown formatting like bold, italics, lists, and
+links).
+
 ## Usage
 
 Build the binary:
