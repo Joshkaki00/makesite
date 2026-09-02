@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"text/template"
+	"time"
 
 	"github.com/yuin/goldmark"
 )
@@ -95,6 +96,8 @@ func main() {
 	}
 
 	if *dir != "" {
+		start := time.Now()
+
 		var matches []string
 		err := filepath.WalkDir(*dir, func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
@@ -126,8 +129,9 @@ func main() {
 		}
 
 		kb := float64(totalBytes) / 1000.0
-		fmt.Printf("%sSuccess!%s Generated %s%d%s pages (%.1fkB total)\n",
-			ansiBoldGreen, ansiReset, ansiBold, len(matches), ansiReset, kb)
+		elapsed := time.Since(start).Seconds()
+		fmt.Printf("%sSuccess!%s Generated %s%d%s pages (%.1fkB total) in %.2f seconds\n",
+			ansiBoldGreen, ansiReset, ansiBold, len(matches), ansiReset, kb, elapsed)
 		return
 	}
 
