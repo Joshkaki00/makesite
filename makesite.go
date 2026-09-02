@@ -85,13 +85,22 @@ func main() {
 
 	if *dir != "" {
 		var matches []string
-		for _, pattern := range []string{"*.txt", "*.md"} {
-			found, err := filepath.Glob(filepath.Join(*dir, pattern))
+		err := filepath.WalkDir(*dir, func(path string, d fs.DirEntry, err error) error {
 			if err != nil {
-				panic(err)
+				return err
 			}
-			matches = append(matches, found...)
+			if d.IsDir() {
+				return nil
+			}
+			if strings.HasSuffix(path, ".txt") {
+				matches = append(matches, path)
+			}
+			return nil
+		})
+		if err != nil {
+			panic(err)
 		}
+	
 		for _, m := range matches {
 			fmt.Println(m)
 		}
