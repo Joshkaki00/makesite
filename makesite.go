@@ -34,10 +34,10 @@ func renderMarkdown(source []byte) (string, error) {
 	return buf.String(), nil
 }
 
-func renderPost(tmpl *template.Template, path string) error {
+func renderPost(tmpl *template.Template, path string) (int64, error) {
 	content, err := os.ReadFile(path)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	isMarkdown := strings.HasSuffix(path, ".md")
@@ -56,7 +56,7 @@ func renderPost(tmpl *template.Template, path string) error {
 	if isMarkdown {
 		html, err := renderMarkdown([]byte(body))
 		if err != nil {
-			return err
+			return 0, err
 		}
 		body = html
 	}
@@ -69,11 +69,19 @@ func renderPost(tmpl *template.Template, path string) error {
 	outputName := strings.TrimSuffix(strings.TrimSuffix(path, ".txt"), ".md") + ".html"
 	out, err := os.Create(outputName)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer out.Close()
 
-	return tmpl.Execute(out, post)
+	if err := tmpl.Execute(out, post); err != nil {
+		return 0, err
+	}
+
+	info, err := out.Stat()
+	if err != nil {
+		return 0, err
+	}
+	return info.Size(), nil
 }
 
 func main() {
@@ -107,18 +115,23 @@ func main() {
 		for _, m := range matches {
 			fmt.Println(m)
 		}
+
+		var totalBytes int64
 		for _, m := range matches {
-			if err := renderPost(tmpl, m); err != nil {
+			size, err := renderPost(tmpl, m)
+			if err != nil {
 				panic(err)
 			}
+			totalBytes += size
 		}
 
-		fmt.Printf("%sSuccess!%s Generated %s%d%s pages\n",
-			ansiBoldGreen, ansiReset, ansiBold, len(matches), ansiReset)
+		kb := float64(totalBytes) / 1000.0
+		fmt.Printf("%sSuccess!%s Generated %s%d%s pages (%.1fkB total)\n",
+			ansiBoldGreen, ansiReset, ansiBold, len(matches), ansiReset, kb)
 		return
 	}
 
-	if err := renderPost(tmpl, *file); err != nil {
+	if _, err := renderPost(tmpl, *file); err != nil {
 		panic(err)
 	}
 }
