@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"io/fs"
 	"path/filepath"
 	"strings"
 	"text/template"
