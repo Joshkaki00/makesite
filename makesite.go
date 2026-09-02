@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"os"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"strings"
 	"text/template"
@@ -17,6 +17,12 @@ type Post struct {
 	Title string
 	Body  string
 }
+
+const (
+	ansiBold      = "\033[1m"
+	ansiBoldGreen = "\033[1;32m"
+	ansiReset     = "\033[0m"
+)
 
 // renderMarkdown converts Markdown source (including # through ######
 // headings) into HTML using goldmark.
@@ -60,10 +66,6 @@ func renderPost(tmpl *template.Template, path string) error {
 		Body:  body,
 	}
 
-	if err := tmpl.Execute(os.Stdout, post); err != nil {
-		return err
-	}
-
 	outputName := strings.TrimSuffix(strings.TrimSuffix(path, ".txt"), ".md") + ".html"
 	out, err := os.Create(outputName)
 	if err != nil {
@@ -101,7 +103,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-	
+
 		for _, m := range matches {
 			fmt.Println(m)
 		}
@@ -110,6 +112,9 @@ func main() {
 				panic(err)
 			}
 		}
+
+		fmt.Printf("%sSuccess!%s Generated %s%d%s pages\n",
+			ansiBoldGreen, ansiReset, ansiBold, len(matches), ansiReset)
 		return
 	}
 
